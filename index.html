@@ -45,6 +45,11 @@
  .theme-quick:hover{background:var(--line)}.theme-quick>span:first-child{font-size:17px;line-height:19px}
  .theme-prefix{display:none}
 }
+.illustrations .image-frame{position:relative;width:var(--image-desktop);max-width:100%;overflow:hidden;border-radius:8px}
+.illustrations .image-frame img{position:absolute;inset:0;width:100%;height:100%;max-height:none}
+.illustrations .image-preview{object-fit:fill;filter:blur(5px);transform:scale(1.04)}
+.illustrations .image-full{opacity:0}.illustrations .image-full.is-loaded{opacity:1;background:white}
+@media(max-width:700px){.illustrations .image-frame{width:var(--image-mobile)}}
 .sign-notes{display:grid;gap:8px;margin:13px 0}.sign-note{padding:10px 12px;background:white;border:1px solid var(--line);border-radius:8px}.sign-note dt{font-weight:700}.sign-note dd{margin:3px 0 0}</style></head>
 <body>
 <aside class="sidebar"><div class="brand"><div class="brandmark">↗</div><div><strong>Vững Tay Lái</strong><small>HỌC VỮNG · LÁI AN TOÀN</small></div></div><nav class="nav" aria-label="Điều hướng chính" id="nav"></nav><button type="button" class="theme-quick" id="themeQuick" data-action="themeQuick" hidden></button><div class="sidefoot"><b><span class="dot"></span>Hành trình của riêng bạn</b>Tiến độ tự động lưu trên<br>trình duyệt này.<div style="margin-top:22px;font-size:10px;letter-spacing:1px">BỘ 600 CÂU HỎI · 2025</div></div></aside>
@@ -169,9 +174,26 @@ function startPractice(kind,custom){let ids,title;
  go('study');
  if(activeExam) toast('Đã kết thúc bài thi và lưu kết quả.');
 }
+function questionImage(question, src, index) {
+ const image = DATA.imagePreviews?.[src];
+ const alt = `Hình minh họa câu ${question.id}${question.images.length>1 ? ', hình '+(index+1) : ''}`;
+ const zoom = `data-action="zoom" data-value="${index}" aria-label="Phóng to hình minh họa ${index+1}"`;
+ if(!image) return `<button ${zoom}><img src="${esc(src)}" alt="${esc(alt)}" decoding="async"></button>`;
+ const {width,height,preview}=image;
+ const desktopWidth=Math.min(width,410*width/height);
+ const mobileWidth=Math.min(width,320*width/height);
+ return `<button ${zoom} class="image-frame" style="--image-desktop:${desktopWidth}px;--image-mobile:${mobileWidth}px;aspect-ratio:${width}/${height}">
+  <img class="image-preview" src="${esc(preview)}" alt="" aria-hidden="true">
+  <img class="image-full" src="${esc(src)}" width="${width}" height="${height}" alt="${esc(alt)}" decoding="async">
+ </button>`;
+}
+document.addEventListener('load',event=>{
+ const image=event.target;
+ if(image.classList?.contains('image-full')) image.classList.add('is-loaded');
+},true);
 function study(){const s=state.session;if(!s)return '<div class="empty"><h2>Chọn một nhóm để bắt đầu</h2><button class="btn" data-action="view" data-value="home">Về tổng quan</button></div>';const q=getq(s.ids[s.pos]),selected=s.answers[q.id],live=s.mode==='exam'&&!s.done,reveal=!live&&selected!==undefined,showAnswer=!live&&(reveal||state.explain||s.done),answered=Object.keys(s.answers).length;
 return `<div class="pagehead studyhead"><div><div class="eyebrow muted">${s.mode==='exam'?'THI THỬ · HẠNG '+esc(s.license):'KHÔNG GIAN ÔN LUYỆN'}</div><h1 style="font-size:26px;margin-top:8px">${esc(s.title)}</h1><p>${live?'Đáp án và gợi ý sẽ xuất hiện sau khi nộp bài.':'Đọc kỹ tình huống, chọn đáp án rồi xem lại kiến thức.'}</p></div><div class="row">${live?'<span class="pill" id="timerTop" aria-label="Thời gian thi còn lại"></span>':''}<button class="btn" data-action="view" data-value="home">${live?'Về tổng quan':'← Tổng quan'}</button>${s.mode==='exam'?`<button class="btn ${live?'primary':''}" data-action="${live?'submit':'result'}">${live?'Nộp bài':'Kết quả'}</button>`:''}</div></div>
-<div class="practice-layout"><div><article class="panel question-panel" id="questionCard"><div class="row spread"><div class="row" style="gap:7px"><span class="pill">CÂU ${q.id} / 600</span>${q.critical?'<span class="pill red">ĐIỂM LIỆT</span>':''}<span class="pill gray">Chương ${q.chapter}</span></div><button class="bookmark ${state.bookmarks.includes(q.id)?'on':''}" data-action="bookmark" data-value="${q.id}" aria-pressed="${state.bookmarks.includes(q.id)}">${state.bookmarks.includes(q.id)?'★ Đã lưu':'☆ Lưu câu'}</button></div><h2 id="questionHeading">${esc(q.text)}</h2>${q.images.length?`<div class="illustrations">${q.images.map((src,i)=>`<button data-action="zoom" data-value="${i}" aria-label="Phóng to hình minh họa ${i+1}"><img src="${esc(src)}" alt="Hình minh họa câu ${q.id}${q.images.length>1?', hình '+(i+1):''}" decoding="async"></button>`).join('')}<small class="muted">Chạm vào hình để phóng to</small></div>`:''}
+<div class="practice-layout"><div><article class="panel question-panel" id="questionCard"><div class="row spread"><div class="row" style="gap:7px"><span class="pill">CÂU ${q.id} / 600</span>${q.critical?'<span class="pill red">ĐIỂM LIỆT</span>':''}<span class="pill gray">Chương ${q.chapter}</span></div><button class="bookmark ${state.bookmarks.includes(q.id)?'on':''}" data-action="bookmark" data-value="${q.id}" aria-pressed="${state.bookmarks.includes(q.id)}">${state.bookmarks.includes(q.id)?'★ Đã lưu':'☆ Lưu câu'}</button></div><h2 id="questionHeading">${esc(q.text)}</h2>${q.images.length?`<div class="illustrations">${q.images.map((src,i)=>questionImage(q,src,i)).join('')}<small class="muted">Chạm vào hình để phóng to</small></div>`:''}
 <div class="answers" role="group" aria-labelledby="questionHeading">${q.options.map((a,i)=>`<button class="answer ${selected===i?'selected':''} ${showAnswer&&i===q.correct[0]?'correct':''} ${showAnswer&&selected===i&&i!==q.correct[0]?'wrong':''}" data-action="answer" data-value="${i}" aria-pressed="${selected===i}" ${s.done&&s.mode==='exam'?'disabled':''}><span class="number">${i+1}</span><span>${esc(a)}${showAnswer&&i===q.correct[0]?'<span class="small" style="display:block;color:#407447;margin-top:3px">✓ Đáp án đúng</span>':''}</span></button>`).join('')}</div>
 ${reveal||s.done?`<div class="feedback ${selected!==q.correct[0]?'bad':''}" role="status">${selected===q.correct[0]?'✓ Chính xác. Tiếp tục giữ vững phong độ!':selected===undefined?'Chưa trả lời. Đáp án đúng: '+(q.correct[0]+1)+'.':'Chưa chính xác. Đáp án đúng: '+(q.correct[0]+1)+'.'}${q.critical&&selected!==q.correct[0]?' Đây là câu điểm liệt, hãy ôn lại kỹ.':''}</div>`:''}
 ${!live?`<div class="explain"><label class="toggle"><input type="checkbox" id="explainToggle" ${state.explain?'checked':''}>Bật gợi ý, đáp án & căn cứ tham khảo</label>${state.explain?explanation(q):''}</div>`:''}<div class="small muted" style="margin-top:17px">Nguồn đáp án: bộ 600 câu Cục CSGT 2025 · Trang PDF ${q.page}</div></article>
