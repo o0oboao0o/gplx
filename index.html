@@ -53,7 +53,7 @@
 .sign-notes{display:grid;gap:8px;margin:13px 0}.sign-note{padding:10px 12px;background:white;border:1px solid var(--line);border-radius:8px}.sign-note dt{font-weight:700}.sign-note dd{margin:3px 0 0}</style></head>
 <body>
 <aside class="sidebar"><div class="brand"><div class="brandmark">↗</div><div><strong>Vững Tay Lái</strong><small>HỌC VỮNG · LÁI AN TOÀN</small></div></div><nav class="nav" aria-label="Điều hướng chính" id="nav"></nav><button type="button" class="theme-quick" id="themeQuick" data-action="themeQuick" hidden></button><div class="sidefoot"><b><span class="dot"></span>Hành trình của riêng bạn</b>Tiến độ tự động lưu trên<br>trình duyệt này.<div style="margin-top:22px;font-size:10px;letter-spacing:1px">BỘ 600 CÂU HỎI · 2025</div></div></aside>
-<main><header class="topbar"><div class="breadcrumb">Không gian ôn luyện <span style="margin:0 9px">/</span><span id="crumb">Tổng quan</span></div><div class="mobile-brand">↗ Vững Tay Lái</div><div class="topbadge"><span class="dot"></span>600 câu · Đáp án cố định</div></header><div id="storageWarning"></div><div id="app" aria-busy="true"><section class="panel startup" role="status"><span class="load-spinner" aria-hidden="true"></span><div><h2>Đang tải bộ câu hỏi…</h2><p class="muted">Đang chuẩn bị 600 câu hỏi và đáp án.</p></div></section></div><footer class="footer">Vững Tay Lái · Ôn tập theo bộ đề Cục CSGT năm 2025 · Dữ liệu học tập lưu trên thiết bị của bạn</footer></main>
+<main><header class="topbar"><div class="breadcrumb">Không gian ôn luyện <span style="margin:0 9px">/</span><span id="crumb">Tổng quan</span></div><div class="mobile-brand">↗ Vững Tay Lái</div><div class="topbadge"><span class="dot"></span>600 câu · Đáp án cố định</div></header><div id="storageWarning"></div><div id="app" aria-busy="true"><section class="panel startup" role="status"><span class="load-spinner" aria-hidden="true"></span><div><h2>Đang tải bộ câu hỏi và hình minh họa…</h2><p class="muted">Tải một lần để chuyển câu liền mạch. Bạn có thể bắt đầu ngay khi dữ liệu đã sẵn sàng.</p></div></section></div><footer class="footer">Vững Tay Lái · Ôn tập theo bộ đề Cục CSGT năm 2025 · Dữ liệu học tập lưu trên thiết bị của bạn</footer></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog id="imageDialog"><div class="modalhead"><strong>Hình minh họa gốc</strong><button class="btn sm" data-action="closeImage">Đóng ✕</button></div><img id="largeImage" alt="Hình minh họa câu hỏi phóng to"></dialog>
 <dialog id="confirmDialog" style="max-width:430px"><h3 id="confirmMessage"></h3><div class="row" style="margin-top:22px;justify-content:flex-end"><button class="btn" data-action="cancelConfirm">Quay lại</button><button class="btn primary" data-action="acceptConfirm">Xác nhận</button></div></dialog>
@@ -179,12 +179,12 @@ function questionImage(question, src, index) {
  const alt = `Hình minh họa câu ${question.id}${question.images.length>1 ? ', hình '+(index+1) : ''}`;
  const zoom = `data-action="zoom" data-value="${index}" aria-label="Phóng to hình minh họa ${index+1}"`;
  if(!image) return `<button ${zoom}><img src="${esc(src)}" alt="${esc(alt)}" decoding="async"></button>`;
- const {width,height,preview}=image;
+ const {width,height,preview,full}=image;
  const desktopWidth=Math.min(width,410*width/height);
  const mobileWidth=Math.min(width,320*width/height);
  return `<button ${zoom} class="image-frame" style="--image-desktop:${desktopWidth}px;--image-mobile:${mobileWidth}px;aspect-ratio:${width}/${height}">
   <img class="image-preview" src="${esc(preview)}" alt="" aria-hidden="true">
-  <img class="image-full" src="${esc(src)}" width="${width}" height="${height}" alt="${esc(alt)}" decoding="async">
+  <img class="image-full" src="${esc(full ?? src)}" width="${width}" height="${height}" alt="${esc(alt)}" decoding="async">
  </button>`;
 }
 document.addEventListener('load',event=>{
@@ -248,7 +248,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acti
  else if(a==='bookmark'){const id=+v;state.bookmarks=state.bookmarks.includes(id)?state.bookmarks.filter(n=>n!==id):[...state.bookmarks,id];persist();const y=window.scrollY;render();window.scrollTo(0,y);}
  else if(a==='jump'){state.session.pos=+v;persist();render();$('#questionCard').scrollIntoView({block:'start'});}
  else if(a==='jumpInput'){const n=+$('#jumpNumber').value;if(!Number.isInteger(n)||n<1||n>state.session.ids.length){toast('Số vị trí không hợp lệ.');return;}state.session.pos=n-1;persist();render();$('#questionCard').scrollIntoView({block:'start'});}
- else if(a==='zoom'){$('#largeImage').src=getq(state.session.ids[state.session.pos]).images[+v];$('#imageDialog').showModal();}else if(a==='closeImage')$('#imageDialog').close();
+ else if(a==='zoom'){const source=getq(state.session.ids[state.session.pos]).images[+v];$('#largeImage').src=DATA.imagePreviews?.[source]?.full ?? source;$('#imageDialog').showModal();}else if(a==='closeImage')$('#imageDialog').close();
  else if(a==='license'){state.license=v;persist();render();}else if(a==='startExam')startExam();else if(a==='submit')finishExam();else if(a==='result')go('result');else if(a==='review'){state.session.pos=0;persist();go('study');}
  else if(a==='reviewWrong'){const s=state.session,ids=s.ids.filter(id=>s.answers[id]!==getq(id).correct[0]);if(!ids.length)toast('Bạn đã trả lời đúng tất cả câu hỏi!');else startPractice('wrong',ids);}
  else if(a==='historyReview'){if(!canReplace())return;state.session=JSON.parse(JSON.stringify(state.history[+v]));persist();go('result');}
@@ -283,7 +283,7 @@ setInterval(updateTimer,1000);render();
   app.setAttribute('aria-busy','true');
   app.innerHTML=loading;
   try {
-   const response=await fetch('./study-data/questions.json',{signal:AbortSignal.timeout(30000)});
+   const response=await fetch('./study-data/questions.json',{signal:AbortSignal.timeout(120000)});
    if(!response.ok) throw Error('Question data request failed');
    const data=await response.json();
    if(data.questions?.length!==600||!data.references||!data.pools) throw Error('Invalid question data');
